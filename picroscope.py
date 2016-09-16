@@ -13,18 +13,23 @@ from pygame.locals import *
 class TextBox:
 
     def __init__(self, rect, **kwargs):
-        self.rect      = rect # Bounds
-        self.color     = None # Background fill color, if any
-        self.outline   = None # Outline color, if any
-        self.textcolor = None # Text color, if any
-        self.callback  = None # Callback function
-        self.value     = None # Value passed to callback
+        self.rect = rect  # Bounds
+        self.color = None  # Background fill color, if any
+        self.outline = None  # Outline color, if any
+        self.textcolor = None  # Text color, if any
+        self.callback = None  # Callback function
+        self.value = None  # Value passed to callback
         for key, value in kwargs.items():
-            if   key == 'color'    : self.color     = value
-            elif key == 'outline'  : self.outline   = value
-            elif key == 'textcolor': self.textcolor = value
-            elif key == 'cb'       : self.callback  = value
-            elif key == 'value'    : self.value     = value
+            if key == 'color':
+                self.color = value
+            elif key == 'outline':
+                self.outline = value
+            elif key == 'textcolor':
+                self.textcolor = value
+            elif key == 'cb':
+                self.callback = value
+            elif key == 'value':
+                self.value = value
 
 
 class Item:
@@ -36,10 +41,14 @@ class Item:
         self.values = None
         self.index = None
         for key, value in kwargs.items():
-            if key == 'min': self.min = value
-            elif key == 'max': self.max = value
-            elif key == 'values': self.values = value
-            elif key == 'index': self.index = value
+            if key == 'min':
+                self.min = value
+            elif key == 'max':
+                self.max = value
+            elif key == 'values':
+                self.values = value
+            elif key == 'index':
+                self.index = value
         if (isinstance(self.values, list)):
             self.min = self.values[0]
             self.max = self.values[-1]
@@ -66,12 +75,12 @@ print(awb_mode.values)
 
 # PyGame init
 pygame.init()
-#pygame.display.set_mode((0,0), pygame.FULLSCREEN)
-pygame.display.set_mode((320,240), pygame.RESIZABLE)
+#pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+pygame.display.set_mode((320, 240), pygame.RESIZABLE)
 pygame.event.set_blocked(MOUSEMOTION)
 pygame.key.set_repeat(200, 200)
 
-#OSD/HUD init
+# OSD/HUD init
 osd = Image.new('RGB', (640, 480))
 draw = ImageDraw.Draw(osd)
 draw.font = ImageFont.load_default()
@@ -79,7 +88,7 @@ font = '/usr/share/fonts/truetype/freefont/FreeSans.ttf'
 font_size = margin_h = margin_v = osd.size[0] // 32
 draw.font = ImageFont.truetype(font, font_size)
 
-#PiCamera init
+# PiCamera init
 camera = PiCamera()
 #camera.start_preview()
 overlay_renderer = camera.add_overlay(
@@ -106,7 +115,7 @@ def draw_text(n, qt, text, position):
         draw.text(((osd.size[0] - w) // 2, origin_v), text, 'orange')
 
 def format_text(name):
-    return name.replace('_',' ').upper()
+    return name.replace('_', ' ').upper()
 
 def update_overlay():
     param = {
@@ -148,9 +157,9 @@ def toggle_preview():
 def set_brightness(direction):
     """Sets brightness level"""
     old = camera.brightness
-    if direction ==  0:
+    if direction == 0:
         camera.brightness = brightness.default
-    elif direction ==  1 and old < brightness.max:
+    elif direction == 1 and old < brightness.max:
         camera.brightness += 1
     elif direction == -1 and old > brightness.min:
         camera.brightness -= 1
@@ -162,9 +171,9 @@ def set_brightness(direction):
 def set_contrast(direction):
     """Sets contrast level"""
     old = camera.contrast
-    if  direction ==  0:
+    if direction == 0:
         camera.contrast = contrast.default
-    elif direction ==  1 and old < contrast.max:
+    elif direction == 1 and old < contrast.max:
         camera.contrast += 1
     elif direction == -1 and old > contrast.min:
         camera.contrast -= 1
@@ -176,10 +185,10 @@ def set_contrast(direction):
 def set_iso(direction):
     """Sets ISO level"""
     old = camera.iso
-    if  direction ==  0:
+    if direction == 0:
         iso.index = 0
         camera.iso = iso.default
-    elif direction ==  1 and old < iso.max:
+    elif direction == 1 and old < iso.max:
         iso.index += 1
         camera.iso = iso.values[iso.index]
     elif direction == -1 and old > iso.min:
@@ -187,15 +196,15 @@ def set_iso(direction):
         camera.iso = iso.values[iso.index]
     else:
         print('iso out of range!')
-    print(old, '>', camera.iso)
+    #print(old, '>', camera.iso)
     return camera.iso
 
 def set_awb_mode(direction):
     """Sets AWB mode"""
     old = camera.awb_mode
-    if  direction ==  0:
+    if direction == 0:
         camera.awb_mode = awb_mode.default
-    elif direction ==  1 and old < contrast.max:
+    elif direction == 1 and old < contrast.max:
         camera.awb_mode += 1
     elif direction == -1 and old > contrast.min:
         camera.awb_mode -= 1
@@ -243,16 +252,16 @@ def main():
 
     running = True
 
-    while running == True:
+    while running:
 
         # Process input
         for event in pygame.event.get():
             if event.type == pygame.QUIT: running = False
             elif event.type == pygame.KEYDOWN:
-                if  event.key == K_ESCAPE: running = False
+                if event.key == K_ESCAPE: running = False
                 elif event.key == K_F1: toggle_preview()
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if   event.button == 1: set_contrast(1)
+                if event.button == 1: set_contrast(1)
                 elif event.button == 2: set_iso(0)
                 elif event.button == 3: set_contrast(-1)
                 elif event.button == 4: set_iso(1)
