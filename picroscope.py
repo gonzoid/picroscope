@@ -7,6 +7,7 @@ from picamera import PiCamera
 from PIL import Image, ImageDraw, ImageFont, ImageColor
 import pygame
 from pygame.locals import *
+import logger
 
 # UI classes ------------------------------------------------------------------
 
@@ -69,7 +70,7 @@ contrast = Item(0, min=-100, max=100)
 iso = Item(0, values=[0, 100, 200, 320, 400, 500, 640, 800], index=0)
 
 awb_mode = Item('auto', values=PiCamera.AWB_MODES)  # camera.AWB_MODES
-print(awb_mode.values)
+logger.info(awb_mode.values)
 
 # Initialisation --------------------------------------------------------------
 
@@ -147,12 +148,12 @@ def toggle_preview():
         camera.stop_preview()
         overlay_renderer.alpha = 0
         pygame.display.set_mode((320, 240), pygame.RESIZABLE)
-        print('stop preview')
+        logger.info('stop preview')
     else:
         camera.start_preview()
         overlay_renderer.alpha = 128
         pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-        print('start preview')
+        logger.info('start preview')
 
 def set_brightness(direction):
     """Sets brightness level"""
@@ -164,8 +165,8 @@ def set_brightness(direction):
     elif direction == -1 and old > brightness.min:
         camera.brightness -= 1
     else:
-        print('brightness out of range!')
-    #print(old, '>', camera.brightness)
+        logger.info('brightness out of range!')
+    #logger.info('%s > %s', old, camera.brightness)
     return camera.brightness
 
 def set_contrast(direction):
@@ -178,8 +179,8 @@ def set_contrast(direction):
     elif direction == -1 and old > contrast.min:
         camera.contrast -= 1
     else:
-        print('contrast out of range!')
-    #print(old, '>', camera.contrast)
+        logger.info('contrast out of range!')
+    #logger.info('%s > %s', old, camera.contrast)
     return camera.contrast
 
 def set_iso(direction):
@@ -195,8 +196,8 @@ def set_iso(direction):
         iso.index -= 1
         camera.iso = iso.values[iso.index]
     else:
-        print('iso out of range!')
-    #print(old, '>', camera.iso)
+        logger.info('iso out of range!')
+    #logger.info(%s > %s', old, camera.iso)
     return camera.iso
 
 def set_awb_mode(direction):
@@ -209,8 +210,8 @@ def set_awb_mode(direction):
     elif direction == -1 and old > contrast.min:
         camera.awb_mode -= 1
     else:
-        print('awb_mode out of range!')
-    #print(old, '>', camera.awb_mode)
+        logger.info('awb_mode out of range!')
+    #logger.info('%s > %s', old, camera.awb_mode)
     return camera.awb_mode
 
 def set_zoom(direction):
@@ -230,8 +231,8 @@ def set_zoom(direction):
         x = y = Fraction(1 - w, 2)
         camera.zoom = (x, y, w, h)
     else:
-        print('zoom out of range!')
-    #print('zoom x', str(zoom.values[zoom.index]))
+        logger.info('zoom out of range!')
+    #logger.info('zoom x %s', zoom.values[zoom.index])
     return camera.zoom
 
 def quit_app():
@@ -241,7 +242,7 @@ def quit_app():
     osd.close()
     camera.close()
     pygame.quit()
-    print('exit program')
+    logger.info('exit program')
     sys.exit()
 
 # Main function ---------------------------------------------------------------
