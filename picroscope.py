@@ -9,6 +9,8 @@ import pygame
 from pygame.locals import *
 import logger
 
+import utilities
+
 # UI classes ------------------------------------------------------------------
 
 class TextBox:
@@ -115,9 +117,6 @@ def draw_text(n, qt, text, position):
     else:
         draw.text(((osd.size[0] - w) // 2, origin_v), text, 'orange')
 
-def format_text(name):
-    return name.replace('_', ' ').upper()
-
 def update_overlay():
     param = {
         'brightness': camera.brightness,
@@ -137,7 +136,7 @@ def update_overlay():
 
     for i, item in enumerate(param.items(), start=1):
         draw_box(i, len(param))
-        draw_text(i, len(param), format_text(item[0]), 0)
+        draw_text(i, len(param), utilities.format_text(item[0]), 0)
         draw_text(i, len(param), str(item[1]), 1)
 
     overlay_renderer.update(osd.tostring())
