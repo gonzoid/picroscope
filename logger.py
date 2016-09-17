@@ -10,7 +10,7 @@ def create_logger(logger_name, log_level='debug', log_file=None):
         'critical': logging.CRITICAL
     }
 
-    LOG_FORMAT = '%(asctime)s - %(name)-13s - %(levelname)-8s : %(message)s'
+    LOG_FORMAT = '%(asctime)s %(name)-13s %(levelname)-8s: %(message)s'
     LOG_DATE_FORMAT = '%Y/%m/%d %H:%M:%S'
     formatter = logging.Formatter(LOG_FORMAT, datefmt=LOG_DATE_FORMAT)
 
