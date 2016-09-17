@@ -12,7 +12,7 @@ from pygame.locals import *
 import logger
 import utilities
 
-log = logger.create_logger(os.path.basename(__file__), 'debug')
+log = logger.create_logger(os.path.basename(__file__))
 
 # UI classes ------------------------------------------------------------------
 
@@ -75,7 +75,7 @@ contrast = Item(0, min=-100, max=100)
 iso = Item(0, values=[0, 100, 200, 320, 400, 500, 640, 800], index=0)
 
 awb_mode = Item('auto', values=PiCamera.AWB_MODES)  # camera.AWB_MODES
-log.debug('\n%s', awb_mode.values)
+log.debug(awb_mode.values)
 
 # Initialisation --------------------------------------------------------------
 
@@ -199,7 +199,7 @@ def set_iso(direction):
         camera.iso = iso.values[iso.index]
     else:
         log.info('iso out of range!')
-    #log.info(%s > %s', old, camera.iso)
+    #log.info('%s > %s', old, camera.iso)
     return camera.iso
 
 def set_awb_mode(direction):
