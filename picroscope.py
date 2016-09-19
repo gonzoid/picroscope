@@ -3,7 +3,6 @@
 import sys
 import os
 from time import sleep, time, clock
-from fractions import Fraction
 from picamera import PiCamera
 from PIL import Image, ImageDraw, ImageFont, ImageColor
 import pygame
@@ -53,29 +52,32 @@ class Item:
                 self.max = value
             elif key == 'values':
                 self.values = value
-            elif key == 'index':
-                self.index = value
-        if (isinstance(self.values, list)):
-            self.min = self.values[0]
-            self.max = self.values[-1]
+                self.index = self.default
+                if isinstance(self.values, list):
+                    self.min = self.values.index(min(self.values))
+                    self.max = self.values.index(max(self.values))
+                if isinstance(self.values, dict):
+                    self.min = min(self.values.keys())
+                    self.max = max(self.values.keys())
 
 # Global variables ------------------------------------------------------------
 
 ui_views = [
-    'brightness', 'contrast', 'framerate', 'hflip', 'iso',
-    'resolution', 'rotation', 'saturation', 'sharpness', 'vflip']
-
-zoom = Item((0.0, 0.0, 1.0, 1.0),
-            values=[1, 2, 3, 4, 5, 8, 10, 16, 20], index=0)
+    'awb_mode', 'brightness', 'contrast', 'framerate', 'iso',
+    'resolution', 'rotation', 'saturation', 'sharpness', 'zoom']
 
 brightness = Item(50, min=0, max=100)
 
 contrast = Item(0, min=-100, max=100)
 
-iso = Item(0, values=[0, 100, 200, 320, 400, 500, 640, 800], index=0)
+zoom = Item(0, values=[1, 1.25, 1.5, 2, 3, 4, 6, 10])
+log.debug(zoom.values)
 
-awb_mode = Item('auto', values=PiCamera.AWB_MODES)  # camera.AWB_MODES
-log.debug(awb_mode.values)
+iso = Item(0, values=[0, 100, 200, 320, 400, 500, 640, 800])
+log.debug(iso.values)
+
+awb_mode = Item(1, values=PiCamera._AWB_MODES_R)  # camera.AWB_MODES
+log.debug('%s %s %s', awb_mode.values, awb_mode.values[awb_mode.min], awb_mode.values[awb_mode.max])
 
 # Initialisation --------------------------------------------------------------
 
@@ -122,16 +124,16 @@ def draw_text(n, qt, text, position):
 
 def update_overlay():
     param = {
+        'awb_mode': camera.awb_mode,
         'brightness': camera.brightness,
         'contrast': camera.contrast,
         'framerate': camera.framerate,
-        'hflip': camera.hflip,
         'iso': camera.iso,
         'resolution': camera.resolution,
         'rotation': camera.rotation,
         'saturation': camera.saturation,
         'sharpness': camera.sharpness,
-        'vflip': camera.vflip,
+        'zoom': camera.zoom,
         }
 
     draw.rectangle((0, 0, osd.size[0]-1, osd.size[1]-1),
@@ -168,7 +170,7 @@ def set_brightness(direction):
         camera.brightness -= 1
     else:
         log.info('brightness out of range!')
-    #log.info('%s > %s', old, camera.brightness)
+    #log.debug('%s > %s', old, camera.brightness)
     return camera.brightness
 
 def set_contrast(direction):
@@ -182,59 +184,58 @@ def set_contrast(direction):
         camera.contrast -= 1
     else:
         log.info('contrast out of range!')
-    #log.info('%s > %s', old, camera.contrast)
+    #log.debug('%s > %s', old, camera.contrast)
     return camera.contrast
 
 def set_iso(direction):
     """Sets ISO level"""
     old = camera.iso
     if direction == 0:
-        iso.index = 0
-        camera.iso = iso.default
-    elif direction == 1 and old < iso.max:
+        iso.index = iso.default
+        camera.iso = iso.values[iso.default]
+    elif direction == 1 and iso.index < iso.max:
         iso.index += 1
         camera.iso = iso.values[iso.index]
-    elif direction == -1 and old > iso.min:
+    elif direction == -1 and iso.index > iso.min:
         iso.index -= 1
         camera.iso = iso.values[iso.index]
     else:
         log.info('iso out of range!')
-    #log.info('%s > %s', old, camera.iso)
+    log.debug('%s > %s', old, camera.iso)
     return camera.iso
 
 def set_awb_mode(direction):
     """Sets AWB mode"""
     old = camera.awb_mode
     if direction == 0:
-        camera.awb_mode = awb_mode.default
-    elif direction == 1 and old < contrast.max:
-        camera.awb_mode += 1
-    elif direction == -1 and old > contrast.min:
-        camera.awb_mode -= 1
+        awb_mode.index = awb_mode.default
+        camera.awb_mode = awb_mode.values[awb_mode.default]
+    elif direction == 1 and awb_mode.index < awb_mode.max:
+        awb_mode.index += 1
+        camera.awb_mode = awb_mode.values[awb_mode.index]
+    elif direction == -1 and awb_mode.index > awb_mode.min:
+        awb_mode.index -= 1
+        camera.awb_mode = awb_mode.values[awb_mode.index]
     else:
         log.info('awb_mode out of range!')
-    #log.info('%s > %s', old, camera.awb_mode)
+    #log.debug('%s > %s', old, camera.awb_mode)
     return camera.awb_mode
 
 def set_zoom(direction):
     """Sets zoom level"""
     old = zoom.values[zoom.index]
     if direction == 0:
-        zoom.index = 0
-        camera.zoom = zoom.default
-    elif direction == 1 and old < zoom.max:
+        zoom.index = zoom.default
+        camera.zoom = utilities.get_zoom_area(zoom.values[zoom.index])
+    elif direction == 1 and zoom.index < zoom.max:
         zoom.index += 1
-        w = h = Fraction(1, zoom.values[zoom.index])
-        x = y = Fraction(1 - w, 2)
-        camera.zoom = (x, y, w, h)
-    elif direction == -1 and old > zoom.min:
+        camera.zoom = utilities.get_zoom_area(zoom.values[zoom.index])
+    elif direction == -1 and zoom.index > zoom.min:
         zoom.index -= 1
-        w = h = Fraction(1, zoom.values[zoom.index])
-        x = y = Fraction(1 - w, 2)
-        camera.zoom = (x, y, w, h)
+        camera.zoom = utilities.get_zoom_area(zoom.values[zoom.index])
     else:
         log.info('zoom out of range!')
-    #log.info('zoom x %s', zoom.values[zoom.index])
+    #log.debug('zoom x %s', zoom.values[zoom.index])
     return camera.zoom
 
 def quit_app():
@@ -265,10 +266,10 @@ def main():
                 elif event.key == K_F1: toggle_preview()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: set_contrast(1)
-                elif event.button == 2: set_iso(0)
+                elif event.button == 2: set_zoom(0)
                 elif event.button == 3: set_contrast(-1)
-                elif event.button == 4: set_iso(1)
-                elif event.button == 5: set_iso(-1)
+                elif event.button == 4: set_zoom(1)
+                elif event.button == 5: set_zoom(-1)
                 update_overlay()
 
         sleep(0.1)
