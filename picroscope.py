@@ -9,13 +9,44 @@ import pygame
 from pygame.locals import *
 
 import logger
+import canvas
 import utilities
 
 log = logger.create_logger(os.path.basename(__file__))
+log.info('Python %s', sys.version)
 
 # UI classes ------------------------------------------------------------------
 
-class TextBox:
+
+class Box(object):
+
+    def __init__(self, rect, **kwargs):  # add parent|canvas
+        self.rect = rect  # (x, y, w, h)
+        self.color = None
+        self.outline = None
+        for key, value in kwargs.items():
+            if key == 'color':
+                self.color = value
+            elif key == 'outline':
+                self.outline = value
+
+    def draw(self):
+        draw.rectangle((self.rect[0], self.rect[1],
+                        self.rect[2]+self.rect[0]-1,
+                        self.rect[3]+self.rect[1]-1),
+                       fill=self.color, outline=self.outline)
+
+    def edit(self, **kwargs):
+        for key, value in kwargs.items():
+            if key == 'rect':
+                self.rect = value
+            elif key == 'color':
+                self.color = value
+            elif key == 'outline':
+                self.outline = value
+
+
+class TextBox(object):
 
     def __init__(self, rect, **kwargs):
         self.rect = rect  # Bounds
@@ -37,7 +68,7 @@ class TextBox:
                 self.value = value
 
 
-class Item:
+class Item(object):
 
     def __init__(self, default, **kwargs):
         self.default = default
@@ -93,14 +124,20 @@ osd = Image.new('RGB', (640, 480))
 draw = ImageDraw.Draw(osd)
 draw.font = ImageFont.load_default()
 font = '/usr/share/fonts/truetype/freefont/FreeSans.ttf'
-font_size = margin_h = margin_v = osd.size[0] // 32
+font_size = margin_h = margin_v = osd.size[0] // 32  # = 20
 draw.font = ImageFont.truetype(font, font_size)
+
+canvas = Box((margin_h, margin_v,
+              osd.size[0] - margin_h*2, osd.size[1] - margin_v*2),
+             outline='green')
+
+mybox = Box((50, 50, 150, 150), color='red', outline='white')
 
 # PiCamera init
 camera = PiCamera()
 #camera.start_preview()
 overlay_renderer = camera.add_overlay(
-    osd.tostring(), fullscreen=False,
+    osd.tobytes(), fullscreen=False,
     layer=4, alpha=128, size=osd.size,
     window=((camera.resolution[0]-osd.size[0]) // 2,
             (camera.resolution[1]-osd.size[1]) // 2, osd.size[0], osd.size[1]))
@@ -111,8 +148,10 @@ def draw_box(n, qt):
     w = osd.size[0] - margin_h*2
     h = (osd.size[1] - margin_v*(qt + 1)) // qt
     origin_v = margin_v*n + h*(n - 1)
-    draw.rectangle((margin_h, origin_v, w + margin_h, origin_v + margin_v),
-                   fill='blue', outline='white')
+
+    draw.rectangle(
+        (margin_h, origin_v, (w + margin_h) - 1, (origin_v + margin_v) - 1),
+        fill='blue', outline='white')
 
 def draw_text(n, qt, text, position):
     w, h = draw.textsize(text)
@@ -123,6 +162,7 @@ def draw_text(n, qt, text, position):
         draw.text(((osd.size[0] - w) // 2, origin_v), text, 'orange')
 
 def update_overlay():
+
     param = {
         'awb_mode': camera.awb_mode,
         'brightness': camera.brightness,
@@ -136,18 +176,25 @@ def update_overlay():
         'zoom': camera.zoom,
         }
 
+    # Draw background
     draw.rectangle((0, 0, osd.size[0]-1, osd.size[1]-1),
                    fill='darkblue', outline='white')
 
+    # Draw canvas
+    canvas.draw()
+
+    mybox.draw()
+
+    # Draw items
     for i, item in enumerate(param.items(), start=1):
         draw_box(i, len(param))
         draw_text(i, len(param), utilities.format_text(item[0]), 0)
         draw_text(i, len(param), str(item[1]), 1)
 
-    overlay_renderer.update(osd.tostring())
+    overlay_renderer.update(osd.tobytes())
 
 def toggle_preview():
-    """Toggles camera preview"""
+    """Toggle camera preview"""
     if camera.preview:
         camera.stop_preview()
         overlay_renderer.alpha = 0
@@ -160,7 +207,7 @@ def toggle_preview():
         log.info('start preview')
 
 def set_brightness(direction):
-    """Sets brightness level"""
+    """Set brightness level"""
     old = camera.brightness
     if direction == 0:
         camera.brightness = brightness.default
@@ -174,7 +221,7 @@ def set_brightness(direction):
     return camera.brightness
 
 def set_contrast(direction):
-    """Sets contrast level"""
+    """Set contrast level"""
     old = camera.contrast
     if direction == 0:
         camera.contrast = contrast.default
@@ -188,7 +235,7 @@ def set_contrast(direction):
     return camera.contrast
 
 def set_iso(direction):
-    """Sets ISO level"""
+    """Set ISO level"""
     old = camera.iso
     if direction == 0:
         iso.index = iso.default
@@ -205,7 +252,7 @@ def set_iso(direction):
     return camera.iso
 
 def set_awb_mode(direction):
-    """Sets AWB mode"""
+    """Set AWB mode"""
     old = camera.awb_mode
     if direction == 0:
         awb_mode.index = awb_mode.default
@@ -222,7 +269,7 @@ def set_awb_mode(direction):
     return camera.awb_mode
 
 def set_zoom(direction):
-    """Sets zoom level"""
+    """Set zoom level"""
     old = zoom.values[zoom.index]
     if direction == 0:
         zoom.index = zoom.default
@@ -239,7 +286,7 @@ def set_zoom(direction):
     return camera.zoom
 
 def quit_app():
-    """Cleanly closes camera and application"""
+    """Close camera and application"""
     if camera.preview:
         camera.stop_preview()
     osd.close()
