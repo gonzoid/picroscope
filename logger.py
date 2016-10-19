@@ -1,5 +1,5 @@
-import logging
 import sys
+import logging
 
 def create_logger(logger_name, log_level='debug', log_file=None):
     levels = {
@@ -19,6 +19,7 @@ def create_logger(logger_name, log_level='debug', log_file=None):
 
     if not log_file:
         stdout = logging.StreamHandler(sys.stdout)
+        
     else:
         stdout = logging.FileHandler(log_file)
 

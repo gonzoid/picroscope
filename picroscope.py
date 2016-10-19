@@ -3,6 +3,7 @@
 import sys
 import os
 from time import sleep, time, clock
+
 from picamera import PiCamera
 from PIL import Image, ImageDraw, ImageFont, ImageColor
 import pygame
@@ -87,7 +88,7 @@ class Item(object):
                 if isinstance(self.values, list):
                     self.min = self.values.index(min(self.values))
                     self.max = self.values.index(max(self.values))
-                if isinstance(self.values, dict):
+                if isinstance(self.values, dict):  # elif!
                     self.min = min(self.values.keys())
                     self.max = max(self.values.keys())
 
