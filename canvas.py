@@ -147,9 +147,7 @@ class TextBox(Box):
     is auto-managed.
     """
 
-    def __init__(self, text, canvas_size, text_color=None, font=None,
-                 spacing=0, text_align='left', box_color=None, padding=5,
-                 frame_width=0, priority=0):
+    def __init__(self, text, canvas_size, **kwargs):
         """
         :param text: the text of the box
         :param text_color: the color of the text, 0 for black on white,
@@ -169,26 +167,24 @@ class TextBox(Box):
         ##self.visible = True
         ##self.size = None
         self.canvas_size = canvas_size
-        self.priority = priority
+        self.priority = 0
 
         self.text = None
         self.text_color = None
         self.font = None
-        self.spacing = None
-        self.text_align = None
+        self.spacing = 0
+        self.text_align = 'left'
         self.box_color = None
-        self.padding = None
-        self.frame_width = None
+        self.padding = 5
+        self.frame_width = 0
         self.image = Image.new('RGBA', (0,0))  # dummy Image for ImageDraw
         self.draw = ImageDraw.Draw(self.image)
 
-        self.edit_properties(text, text_color, font, spacing, text_align,
-                             box_color, padding, frame_width)
+        kwargs.update({'text': text})
+        self.edit_properties(**kwargs)
 
 
-    def edit_properties(self, text=None, text_color=None, font=None,
-                        spacing=None, text_align=None, box_color=None,
-                        padding=None, frame_width=None):
+    def edit_properties(self, **kwargs):
         """
         Change the box's given properties (the ones that implies
             redrawing it)
@@ -203,26 +199,30 @@ class TextBox(Box):
         :param frame_width: the width of the frame line in pixels
         ### add type attr. (like 'title') w/ std font, txt_align, etc.
         """
-        if text is not None:
-            self.text = text
-        if text_color is not None:
-            self.text_color = text_color #0 if text_color==0 else 255
-        if font is not None:
-            self.font = font
-        if spacing is not None:
-            self.spacing = spacing
-        if text_align is not None:
-            self.text_align = text_align
-        if box_color is not None:
-            self.box_color = box_color
-        if padding is not None:
-            self.padding = padding
-        if frame_width is not None:
-            self.frame_width = frame_width
+        for key, value in kwargs.items():
+            log.debug('%s: %s', key, value)
+            if key == 'text':
+                self.text = value
+            elif key == 'text_color': #0 if text_color==0 else 255
+                self.text_color = value
+            elif key == 'font':
+                self.font = value
+            elif key == 'spacing':
+                self.spacing = value
+            elif key == 'text_align':
+                self.text_align = value
+            elif key == 'box_color':
+                self.box_color = value
+            elif key == 'padding':
+                self.padding = value
+            elif key == 'frame_width':
+                self.frame_width = value
+            elif key == 'priority':
+                self.priority = value
 
-        x = self.draw.textsize(text, self.font)[0] + \
+        x = self.draw.textsize(self.text, self.font)[0] + \
             2 * self.padding + 2 * self.frame_width
-        y = self.draw.textsize(text, self.font)[1] + \
+        y = self.draw.textsize(self.text, self.font)[1] + \
             2 * self.padding + 2 * self.frame_width
         self.size = (x, y)
         self.image = Image.new('RGBA', self.size, self.box_color)
@@ -255,7 +255,7 @@ class TextBox(Box):
         ### add swap_color method?
 
 
-class Canvas(object):
+class Canvas(object):  # XXX make this a Box subclass
     """
     A GUI for the Nokia 5110 LCD screen. It features two kind of boxes:
     imageboxes and textboxes. Image boxes are moveable images on the base
@@ -306,9 +306,7 @@ class Canvas(object):
         self._boxes[box_id] = box
 
 
-    def add_textbox(self, box_id, text, text_color=None, font=None, spacing=0,
-                    text_align='left', box_color=None, padding=5,
-                    frame_width=0, priority=0):
+    def add_textbox(self, box_id, text, **kwargs):
         """
         Add a new textbox to the boxes with the given properties
         :param box_id: the name of the box, should be unique
@@ -328,9 +326,7 @@ class Canvas(object):
         if box_id in self._boxes.keys():
             raise ValueError("ID already exists")
 
-        textbox = TextBox(text, self.size, text_color, font, spacing,
-                               text_align, box_color, padding, frame_width,
-                               priority)
+        textbox = TextBox(text, self.size, **kwargs)
         self._boxes[box_id] = textbox
 
 
@@ -359,15 +355,11 @@ class Canvas(object):
             raise TypeError("edit_imagebox called on a non-ImageBox box", e)
 
 
-    def edit_textbox(self, box_id, text=None, text_color=None, font=None,
-                     spacing=None, text_align=None, box_color=None,
-                     padding=None, frame_width=None):
+    def edit_textbox(self, box_id, **kwargs):
         """Edit the textbox's properties. None means no change"""
 
         try:
-            self._boxes[box_id].edit_properties(
-                text, text_color, font, spacing, text_align,
-                box_color, padding, frame_width)
+            self._boxes[box_id].edit_properties(**kwargs)
         except KeyError:
             raise ValueError("Invalid box ID")
         except AttributeError as e:
@@ -502,8 +494,16 @@ def main():
                         text_align='left', frame_width=3, priority=10,
                         text_color='purple', font=font)
 
+    canvas.add_textbox('test', "Minimal test")
+
     for key in canvas._boxes.keys():
         canvas.get_box(key, True)
+
+    print(Box.__mro__)
+    print(ImageBox.__mro__)
+    print(TextBox.__mro__)
+    print(Canvas.__mro__)
+
     canvas.update_screen()
     time.sleep(0.5)
 
